@@ -41,11 +41,73 @@ WHERE titulo like '%bucket bro%';
 SELECT cliente_id, COUNT(cliente_id) as qtde_filmes  FROM aluguel
 JOIN inventario ON aluguel.inventario_id = inventario.inventario_id
 JOIN filme ON filme.filme_id = inventario.filme_id
+JOIN cliente ON cliente.cliente_id = aluguel.cliente_id
 GROUP BY cliente_id
 ORDER BY qtde_filmes DESC
 LIMIT 5;
 
-SELECT titulo, cliente_id  FROM filme
+DELIMITER //
+
+CREATE FUNCTION top_clientes (qtde INT)
+RETURNS VARCHAR(255)
+
+BEGIN
+DECLARE ordem INT;
+DECLARE NOME VARCHAR(255);
+SET ordem = qtde - 1;
+
+SET NOME = (SELECT CONCAT (primeiro_nome,' ', ultimo_nome) as nome_completo, COUNT(aluguel.cliente_id) as qtde_filmes  FROM aluguel
+	JOIN inventario ON aluguel.inventario_id = inventario.inventario_id
+	JOIN filme ON filme.filme_id = inventario.filme_id
+    JOIN cliente ON cliente.cliente_id = aluguel.cliente_id
+	GROUP BY aluguel.cliente_id
+	ORDER BY qtde_filmes DESC
+    LIMIT 1 OFFSET ordem);
+RETURN NOME;
+END;
+
+// DELIMITER ;
+
+drop function top_clientes;
+
+SELECT top_clientes(2);
+
+	SELECT cliente_id, qtde_filmes FROM (SELECT cliente_id, COUNT(cliente_id) as qtde_filmes  FROM aluguel
+	JOIN inventario ON aluguel.inventario_id = inventario.inventario_id
+	JOIN filme ON filme.filme_id = inventario.filme_id
+	JOIN cliente ON cliente.cliente_id = aluguel.cliente_id
+	GROUP BY cliente_id
+	ORDER BY qtde_filmes DESC
+	LIMIT qtde) AS subquery
+    ORDER BY qtde_filmes desc
+    LIMIT 1 OFFSET ordem;
+    
+    SELECT CONCAT (primeiro_nome,' ', ultimo_nome) as nome_completo, COUNT(aluguel.cliente_id) as qtde_filmes  FROM aluguel
+	JOIN inventario ON aluguel.inventario_id = inventario.inventario_id
+	JOIN filme ON filme.filme_id = inventario.filme_id
+    JOIN cliente ON cliente.cliente_id = aluguel.cliente_id
+	GROUP BY aluguel.cliente_id
+	ORDER BY qtde_filmes DESC
+    LIMIT 1 OFFSET 0;
+    
+    
+
+
+SELECT aluguel.cliente_id, CONCAT (primeiro_nome,' ', ultimo_nome) as nome_completo, COUNT(aluguel.cliente_id) as qtde_filmes  FROM aluguel
+	JOIN inventario ON aluguel.inventario_id = inventario.inventario_id
+	JOIN filme ON filme.filme_id = inventario.filme_id
+    JOIN cliente ON cliente.cliente_id = aluguel.cliente_id
+	GROUP BY aluguel.cliente_id
+	ORDER BY qtde_filmes DESC
+    LIMIT 5 OFFSET 0;
+
+
+
+
+
+
+
+SELECT COUNT(*), titulo, cliente_id  FROM filme
 JOIN inventario ON filme.filme_id = inventario.filme_id
 JOIN aluguel ON aluguel.inventario_id = inventario.inventario_id
 WHERE cliente_id = 148;
@@ -120,8 +182,9 @@ CREATE PROCEDURE copy_movies_client(IN cliente_x INT)
 BEGIN
     DECLARE done INT DEFAULT FALSE;
     DECLARE movie_id INT;
+    DECLARE titulo_x VARCHAR(200);
     DECLARE cur CURSOR FOR 
-		SELECT inventario.filme_id, aluguel.cliente_id FROM filme
+		SELECT inventario.filme_id, aluguel.cliente_id, filme.titulo FROM filme
 		JOIN inventario ON filme.filme_id = inventario.filme_id
 		JOIN aluguel ON aluguel.inventario_id = inventario.inventario_id
 		WHERE cliente_id = cliente_x;
@@ -131,19 +194,20 @@ BEGIN
     CREATE TABLE IF NOT EXISTS client_movies (
         id INT AUTO_INCREMENT PRIMARY KEY,
         client_id INT,
-        movie_id INT
+        movie_id INT,
+        titulo_x VARCHAR (200)
     );
 
     OPEN cur;
 
     read_loop: LOOP
-        FETCH cur INTO movie_id, cliente_x;
+        FETCH cur INTO movie_id, cliente_x, titulo_x;
         IF done THEN
             LEAVE read_loop;
         END IF;
 
         -- Insere o filme alugado pelo cliente na tabela de filmes do cliente
-        INSERT INTO client_movies (client_id, movie_id) VALUES (cliente_x, movie_id);
+        INSERT INTO client_movies (client_id, movie_id, titulo_x) VALUES (cliente_x, movie_id,titulo_x);
     END LOOP;
 
     CLOSE cur;
@@ -151,10 +215,16 @@ END//
 
 DELIMITER ;
 
-call copy_movies_client (18);
+call copy_movies_client (148);
 
 drop procedure copy_movies_client;
 
 select * from client_movies;
 
 truncate table client_movies;
+
+drop table client_movies;
+
+alter table client_movies add column data_mdf date;
+
+update client_movies set data_mdf = (curdate()) WHERE id = 76;
