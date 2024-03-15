@@ -79,4 +79,18 @@ INSERT INTO funcao_militar (funcao_militar,fk_id_militar_func) VALUES
 ("Férias"), 
 ("Dispensado"),("Ausente"), ("Desertor"),("Em missão");
 
+INSERT INTO material_carga (nome_mat, descricao_mat, qtde_carga, situacao_mat) VALUES
+( 'Cabo solteiro 4,5m', 'Corda individual  para escalada cor preta tamanho 4,5 metros 10mm de espessura.', 50, 'Em estoque'),
+( 'Faca MK1', 'Faca de combate modelo MK1 marca IMBEL.', 100, 'Em estoque'),
+( 'Cantil 1 litro', 'Cantil de plastico cor verde capacidade 1 litro.', 200, 'Em uso'),
+( 'OVN', 'Aparelho de visão noturna.', 500, 'Em estoque'),
+( 'Mochila Tática Modular', 'Mochila resistente com compartimentos modulares para transporte de equipamento militar.', 150, 'Em uso'),
+( 'Lanterna Tática', 'Lanterna de alta intensidade para uso noturno.', 80, 'Em estoque'),
+( 'Barraca de Campanha', 'Barraca portátil para abrigo durante operações militares.', 20, 'Em estoque'),
+( 'Kit de Primeiros Socorros', 'Kit contendo suprimentos médicos básicos para atendimento emergencial.', 30, 'Em estoque'),
+( 'Binóculos', 'Binóculos com alta capacidade de ampliação para observação de longa distância.', 40, 'Disponivel'),
+('Capacete Balístico', 'Capacete projetado para proteger a cabeça contra impactos balísticos.', 100, 'Disponivel');
+
+select * from material_carga;
+
 
