@@ -1,14 +1,15 @@
--- MariaDB dump 10.19  Distrib 10.4.28-MariaDB, for Win64 (AMD64)\
-
+CREATE DATABASE  IF NOT EXISTS `om` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
+USE `om`;
+-- MySQL dump 10.13  Distrib 8.0.31, for macos12 (x86_64)
 --
 -- Host: localhost    Database: om
 -- ------------------------------------------------------
--- Server version	10.4.28-MariaDB
+-- Server version	8.0.28
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8mb4 */;
+/*!50503 SET NAMES utf8 */;
 /*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
 /*!40103 SET TIME_ZONE='+00:00' */;
 /*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
@@ -22,11 +23,11 @@
 
 DROP TABLE IF EXISTS `arma`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `arma` (
-  `id_arma` int(11) NOT NULL,
-  `arma_nome` varchar(50) NOT NULL,
-  `arma_sigla` varchar(10) DEFAULT NULL,
+  `id_arma` int NOT NULL,
+  `arma_nome` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `arma_sigla` varchar(10) COLLATE utf8mb4_general_ci DEFAULT NULL,
   PRIMARY KEY (`id_arma`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -47,22 +48,21 @@ UNLOCK TABLES;
 
 DROP TABLE IF EXISTS `cautelas`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `cautelas` (
-  `id_cautela` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `fk_id_mat_carga` int(11) NOT NULL,
-  `qtde_cautela` int(11) NOT NULL,
-  `id_operacao` enum('r','d') DEFAULT NULL,
-  `fk_id_militar` int(11) NOT NULL,
-  `data_retirada` date NOT NULL,
-  `data_devolucao` date NOT NULL,
-  `fk_id_responsavel` int(11) NOT NULL,
+  `id_cautela` int unsigned NOT NULL AUTO_INCREMENT,
+  `fk_id_mat_carga` int NOT NULL,
+  `qtde_cautela` int NOT NULL,
+  `id_operacao` enum('r','d') COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `fk_id_militar` int NOT NULL,
+  `data_operacao` date DEFAULT NULL,
+  `fk_id_responsavel` int NOT NULL,
   PRIMARY KEY (`id_cautela`),
   KEY `fkid_militar` (`fk_id_militar`),
   KEY `fkid_mat_carga` (`fk_id_mat_carga`),
   CONSTRAINT `fkid_mat_carga` FOREIGN KEY (`fk_id_mat_carga`) REFERENCES `material_carga` (`id_mat_carga`),
   CONSTRAINT `fkid_militar` FOREIGN KEY (`fk_id_militar`) REFERENCES `militar` (`id_militar`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -71,9 +71,88 @@ CREATE TABLE `cautelas` (
 
 LOCK TABLES `cautelas` WRITE;
 /*!40000 ALTER TABLE `cautelas` DISABLE KEYS */;
-INSERT INTO `cautelas` VALUES (1,2,1,'r',5,'2024-01-05','0000-00-00',1),(2,4,1,'r',6,'2024-01-05','0000-00-00',1),(3,2,2,'r',4,'0000-00-00','0000-00-00',12),(4,4,1,'r',5,'2023-08-15','0000-00-00',1),(5,2,1,'r',5,'2024-01-05','0000-00-00',1),(6,4,1,'r',6,'2024-01-05','0000-00-00',1),(7,2,2,'r',4,'2023-01-15','0000-00-00',12),(8,4,1,'r',5,'2023-08-15','0000-00-00',1);
+INSERT INTO `cautelas` VALUES (1,12,2,'r',5,'2024-02-12',1),(2,4,8,'r',11,'2024-02-12',1),(3,11,2,'r',5,'2024-02-12',1),(6,12,1,'d',5,'2024-02-12',1);
 /*!40000 ALTER TABLE `cautelas` ENABLE KEYS */;
 UNLOCK TABLES;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `material_ret_dev` AFTER INSERT ON `cautelas` FOR EACH ROW BEGIN
+	DECLARE total_mat_disponivel INT;
+    DECLARE emcautela INT;
+    DECLARE totMatDisponivel INT;
+    SET emcautela = (select em_cautela from situacao_material_carga where fk_id_mat_carga = new.fk_id_mat_carga);
+    SET totMatDisponivel = (SELECT total_disponivel FROM situacao_material_carga where fk_id_mat_carga = new.fk_id_mat_carga);
+	
+    IF NEW.id_operacao = 'r' THEN
+		IF NEW.qtde_cautela > totMatDisponivel THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Erro: Quantidade de material a ser retirada excede a quantidade disponível';
+        END IF;
+		
+			UPDATE situacao_material_carga SET total_disponivel = (total_disponivel - new.qtde_cautela)
+			WHERE situacao_material_carga.fk_id_mat_carga = new.fk_id_mat_carga ;
+			UPDATE situacao_material_carga SET em_cautela = (em_cautela + new.qtde_cautela)
+			WHERE situacao_material_carga.fk_id_mat_carga = new.fk_id_mat_carga ;
+		
+    END IF;
+    
+    IF NEW.id_operacao = 'd' THEN
+		
+		IF NEW.qtde_cautela > emcautela THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Erro: Quantidade de material a ser devolvida excede a quantidade em cautela';
+        END IF;
+        
+		UPDATE situacao_material_carga SET total_disponivel = (total_disponivel + new.qtde_cautela)
+        WHERE situacao_material_carga.fk_id_mat_carga = new.fk_id_mat_carga ;
+        UPDATE situacao_material_carga SET em_cautela = (em_cautela - new.qtde_cautela)
+        WHERE situacao_material_carga.fk_id_mat_carga = new.fk_id_mat_carga ;
+        
+	END IF;
+    
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+
+--
+-- Temporary view structure for view `cautelas_por_material`
+--
+
+DROP TABLE IF EXISTS `cautelas_por_material`;
+/*!50001 DROP VIEW IF EXISTS `cautelas_por_material`*/;
+SET @saved_cs_client     = @@character_set_client;
+/*!50503 SET character_set_client = utf8mb4 */;
+/*!50001 CREATE VIEW `cautelas_por_material` AS SELECT 
+ 1 AS `nome_mat`,
+ 1 AS `qtde_cautela`,
+ 1 AS `nome_completo`,
+ 1 AS `RET/DEV`,
+ 1 AS `Data`*/;
+SET character_set_client = @saved_cs_client;
+
+--
+-- Temporary view structure for view `cautelas_por_militar`
+--
+
+DROP TABLE IF EXISTS `cautelas_por_militar`;
+/*!50001 DROP VIEW IF EXISTS `cautelas_por_militar`*/;
+SET @saved_cs_client     = @@character_set_client;
+/*!50503 SET character_set_client = utf8mb4 */;
+/*!50001 CREATE VIEW `cautelas_por_militar` AS SELECT 
+ 1 AS `nome_completo`,
+ 1 AS `nome_mat`,
+ 1 AS `qtde_cautela`*/;
+SET character_set_client = @saved_cs_client;
 
 --
 -- Table structure for table `funcao_militar`
@@ -81,11 +160,11 @@ UNLOCK TABLES;
 
 DROP TABLE IF EXISTS `funcao_militar`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `funcao_militar` (
-  `id_funcao_militar` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `funcao_mil` varchar(30) DEFAULT NULL,
-  `subunidade` varchar(20) DEFAULT NULL,
+  `id_funcao_militar` int unsigned NOT NULL AUTO_INCREMENT,
+  `funcao_mil` varchar(30) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `subunidade` varchar(20) COLLATE utf8mb4_general_ci DEFAULT NULL,
   PRIMARY KEY (`id_funcao_militar`)
 ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -106,13 +185,14 @@ UNLOCK TABLES;
 
 DROP TABLE IF EXISTS `material_carga`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `material_carga` (
-  `id_mat_carga` int(11) NOT NULL AUTO_INCREMENT,
-  `nome_mat` varchar(100) NOT NULL,
-  `descricao_mat` text NOT NULL,
-  `qtde_carga` int(5) DEFAULT NULL,
-  `situacao_mat` varchar(30) NOT NULL,
+  `id_mat_carga` int NOT NULL AUTO_INCREMENT,
+  `nome_mat` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `descricao_mat` text COLLATE utf8mb4_general_ci NOT NULL,
+  `qtde_carga` int DEFAULT NULL,
+  `situacao_mat` varchar(30) COLLATE utf8mb4_general_ci NOT NULL,
+  `material_codigo` varchar(30) COLLATE utf8mb4_general_ci DEFAULT NULL,
   PRIMARY KEY (`id_mat_carga`)
 ) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -123,7 +203,7 @@ CREATE TABLE `material_carga` (
 
 LOCK TABLES `material_carga` WRITE;
 /*!40000 ALTER TABLE `material_carga` DISABLE KEYS */;
-INSERT INTO `material_carga` VALUES (1,'Cabo solteiro 4,5m','Corda individual  para escalada cor preta tamanho 4,5 metros 10mm de espessura.',50,'Em estoque'),(2,'Faca MK1','Faca de combate modelo MK1 marca IMBEL.',100,'Em estoque'),(3,'Cantil 1 litro','Cantil de plastico cor verde capacidade 1 litro.',200,'Em uso'),(4,'OVN','Aparelho de visão noturna.',500,'Em estoque'),(5,'Mochila Tática Modular','Mochila resistente com compartimentos modulares para transporte de equipamento militar.',150,'Em uso'),(6,'Lanterna Tática','Lanterna de alta intensidade para uso noturno.',80,'Em estoque'),(7,'Barraca de Campanha','Barraca portátil para abrigo durante operações militares.',20,'Em estoque'),(8,'Kit de Primeiros Socorros','Kit contendo suprimentos médicos básicos para atendimento emergencial.',30,'Em estoque'),(9,'Binóculos','Binóculos com alta capacidade de ampliação para observação de longa distância.',40,'Disponivel'),(10,'Capacete Balístico','Capacete projetado para proteger a cabeça contra impactos balísticos.',100,'Disponivel'),(11,'Porta-carregador Fuzil','Porta carregador para fuzil M4 cor verde.',200,'Disponivel'),(12,'Abrigo parka','Abrigo impermeavel para frio.',100,'Em estoque');
+INSERT INTO `material_carga` VALUES (1,'Cabo solteiro 4,5m','Corda individual  para escalada cor preta tamanho 4,5 metros 10mm de espessura.',50,'Em estoque','545530'),(2,'Faca MK1','Faca de combate modelo MK1 marca IMBEL.',100,'Em estoque','656312'),(3,'Cantil 1 litro','Cantil de plastico cor verde capacidade 1 litro.',200,'Em uso','983421'),(4,'OVN','Aparelho de visão noturna.',500,'Em estoque','545512'),(5,'Mochila Tática Modular','Mochila resistente com compartimentos modulares para transporte de equipamento militar.',150,'Em uso','876699'),(6,'Lanterna Tática','Lanterna de alta intensidade para uso noturno.',80,'Em estoque','876690'),(7,'Barraca de Campanha','Barraca portátil para abrigo durante operações militares.',20,'Em estoque','453387'),(8,'Kit de Primeiros Socorros','Kit contendo suprimentos médicos básicos para atendimento emergencial.',30,'Em estoque','122265'),(9,'Binóculos','Binóculos com alta capacidade de ampliação para observação de longa distância.',40,'Disponivel','226570'),(10,'Capacete Balístico','Capacete projetado para proteger a cabeça contra impactos balísticos.',100,'Disponivel','115433'),(11,'Porta-carregador Fuzil','Porta carregador para fuzil M4 cor verde.',200,'Disponivel','605598'),(12,'Abrigo parka','Abrigo impermeavel para frio.',100,'Em estoque','235561');
 /*!40000 ALTER TABLE `material_carga` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
@@ -135,9 +215,7 @@ UNLOCK TABLES;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'NO_ZERO_IN_DATE,NO_ZERO_DATE,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 trigger inclusao_material AFTER insert ON material_carga
-FOR EACH ROW
-	BEGIN
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `inclusao_material` AFTER INSERT ON `material_carga` FOR EACH ROW BEGIN
 		INSERT INTO situacao_material_carga (
 						fk_id_mat_carga,
                         existente,
@@ -163,20 +241,20 @@ DELIMITER ;
 
 DROP TABLE IF EXISTS `militar`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `militar` (
-  `id_militar` int(11) NOT NULL,
-  `nome_completo` varchar(255) NOT NULL,
-  `nome_guerra` varchar(100) NOT NULL,
-  `numero` varchar(6) NOT NULL,
-  `fk_id_posto_grad` int(11) NOT NULL,
-  `fk_id_arma` int(11) NOT NULL,
-  `tu_formacao` int(11) NOT NULL,
-  `fk_id_escola_formacao` int(11) NOT NULL,
-  `fk_id_sit_militar` int(11) NOT NULL,
-  `fk_id_sit_servico` int(11) NOT NULL,
-  `cpf` varchar(15) NOT NULL,
-  `idt_mil` varchar(20) NOT NULL,
+  `id_militar` int NOT NULL,
+  `nome_completo` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `nome_guerra` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `numero` varchar(6) COLLATE utf8mb4_general_ci NOT NULL,
+  `fk_id_posto_grad` int NOT NULL,
+  `fk_id_arma` int NOT NULL,
+  `tu_formacao` int NOT NULL,
+  `fk_id_escola_formacao` int NOT NULL,
+  `fk_id_sit_militar` int NOT NULL,
+  `fk_id_sit_servico` int NOT NULL,
+  `cpf` varchar(15) COLLATE utf8mb4_general_ci NOT NULL,
+  `idt_mil` varchar(20) COLLATE utf8mb4_general_ci NOT NULL,
   `data_apresentacao` date NOT NULL,
   `data_desligamento` date NOT NULL,
   PRIMARY KEY (`id_militar`),
@@ -205,11 +283,11 @@ UNLOCK TABLES;
 
 DROP TABLE IF EXISTS `posto_grad`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `posto_grad` (
-  `id_posto_grad` int(11) NOT NULL,
-  `posto_grad` varchar(10) NOT NULL,
-  `posto_grad_extenso` varchar(30) NOT NULL,
+  `id_posto_grad` int NOT NULL,
+  `posto_grad` varchar(10) COLLATE utf8mb4_general_ci NOT NULL,
+  `posto_grad_extenso` varchar(30) COLLATE utf8mb4_general_ci NOT NULL,
   PRIMARY KEY (`id_posto_grad`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -230,19 +308,19 @@ UNLOCK TABLES;
 
 DROP TABLE IF EXISTS `situacao_material_carga`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `situacao_material_carga` (
-  `id_sit_mat_carga` int(11) NOT NULL AUTO_INCREMENT,
-  `fk_id_mat_carga` int(11) DEFAULT NULL,
-  `existente` int(5) DEFAULT NULL,
-  `indisponivel` int(5) DEFAULT NULL,
-  `em_cautela` int(5) DEFAULT NULL,
-  `total_disponivel` int(5) DEFAULT NULL,
-  `data_atualizacao` timestamp NOT NULL DEFAULT current_timestamp(),
+  `id_sit_mat_carga` int NOT NULL AUTO_INCREMENT,
+  `fk_id_mat_carga` int DEFAULT NULL,
+  `existente` int DEFAULT NULL,
+  `indisponivel` int DEFAULT NULL,
+  `em_cautela` int DEFAULT NULL,
+  `total_disponivel` int DEFAULT NULL,
+  `data_atualizacao` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id_sit_mat_carga`),
   KEY `fkid_mat_carga_sit` (`fk_id_mat_carga`),
   CONSTRAINT `fkid_mat_carga_sit` FOREIGN KEY (`fk_id_mat_carga`) REFERENCES `material_carga` (`id_mat_carga`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -251,7 +329,7 @@ CREATE TABLE `situacao_material_carga` (
 
 LOCK TABLES `situacao_material_carga` WRITE;
 /*!40000 ALTER TABLE `situacao_material_carga` DISABLE KEYS */;
-INSERT INTO `situacao_material_carga` VALUES (2,11,200,0,0,200,'2024-03-15 00:44:46'),(3,12,100,0,0,100,'2024-03-15 00:44:46');
+INSERT INTO `situacao_material_carga` VALUES (1,1,50,0,0,50,'2024-03-15 13:29:10'),(2,2,100,0,0,100,'2024-03-15 13:29:10'),(3,3,200,0,0,200,'2024-03-15 13:29:10'),(4,4,500,0,8,492,'2024-03-15 13:29:10'),(5,5,150,0,0,150,'2024-03-15 13:29:10'),(6,6,80,0,0,80,'2024-03-15 13:29:10'),(7,7,20,0,0,20,'2024-03-15 13:29:10'),(8,8,30,0,0,30,'2024-03-15 13:29:10'),(9,9,40,0,0,40,'2024-03-15 13:29:10'),(10,10,100,0,0,100,'2024-03-15 13:29:10'),(11,11,200,0,2,198,'2024-03-15 13:29:10'),(12,12,100,0,1,99,'2024-03-15 13:29:10');
 /*!40000 ALTER TABLE `situacao_material_carga` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -261,10 +339,10 @@ UNLOCK TABLES;
 
 DROP TABLE IF EXISTS `situacao_servico`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `situacao_servico` (
-  `id_sit_serv` int(11) NOT NULL,
-  `sit_servico` varchar(40) NOT NULL,
+  `id_sit_serv` int NOT NULL,
+  `sit_servico` varchar(40) COLLATE utf8mb4_general_ci NOT NULL,
   PRIMARY KEY (`id_sit_serv`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -278,6 +356,50 @@ LOCK TABLES `situacao_servico` WRITE;
 INSERT INTO `situacao_servico` VALUES (1,'Ok'),(2,'Baixado'),(3,'Férias'),(4,'Dispensado'),(5,'Ausente'),(6,'Desertor'),(7,'Em missão');
 /*!40000 ALTER TABLE `situacao_servico` ENABLE KEYS */;
 UNLOCK TABLES;
+
+--
+-- Dumping events for database 'om'
+--
+
+--
+-- Dumping routines for database 'om'
+--
+
+--
+-- Final view structure for view `cautelas_por_material`
+--
+
+/*!50001 DROP VIEW IF EXISTS `cautelas_por_material`*/;
+/*!50001 SET @saved_cs_client          = @@character_set_client */;
+/*!50001 SET @saved_cs_results         = @@character_set_results */;
+/*!50001 SET @saved_col_connection     = @@collation_connection */;
+/*!50001 SET character_set_client      = utf8mb4 */;
+/*!50001 SET character_set_results     = utf8mb4 */;
+/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
+/*!50001 CREATE ALGORITHM=UNDEFINED */
+/*!50013 DEFINER=`root`@`localhost` SQL SECURITY DEFINER */
+/*!50001 VIEW `cautelas_por_material` AS select `material_carga`.`nome_mat` AS `nome_mat`,`cautelas`.`qtde_cautela` AS `qtde_cautela`,`militar`.`nome_completo` AS `nome_completo`,`cautelas`.`id_operacao` AS `RET/DEV`,`cautelas`.`data_operacao` AS `Data` from ((`cautelas` join `militar` on((`militar`.`id_militar` = `cautelas`.`fk_id_militar`))) join `material_carga` on((`material_carga`.`id_mat_carga` = `cautelas`.`fk_id_mat_carga`))) order by `material_carga`.`nome_mat`,`militar`.`nome_completo` */;
+/*!50001 SET character_set_client      = @saved_cs_client */;
+/*!50001 SET character_set_results     = @saved_cs_results */;
+/*!50001 SET collation_connection      = @saved_col_connection */;
+
+--
+-- Final view structure for view `cautelas_por_militar`
+--
+
+/*!50001 DROP VIEW IF EXISTS `cautelas_por_militar`*/;
+/*!50001 SET @saved_cs_client          = @@character_set_client */;
+/*!50001 SET @saved_cs_results         = @@character_set_results */;
+/*!50001 SET @saved_col_connection     = @@collation_connection */;
+/*!50001 SET character_set_client      = utf8mb4 */;
+/*!50001 SET character_set_results     = utf8mb4 */;
+/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
+/*!50001 CREATE ALGORITHM=UNDEFINED */
+/*!50013 DEFINER=`root`@`localhost` SQL SECURITY DEFINER */
+/*!50001 VIEW `cautelas_por_militar` AS select `militar`.`nome_completo` AS `nome_completo`,`material_carga`.`nome_mat` AS `nome_mat`,`cautelas`.`qtde_cautela` AS `qtde_cautela` from ((`cautelas` join `militar` on((`cautelas`.`fk_id_militar` = `militar`.`id_militar`))) join `material_carga` on((`cautelas`.`fk_id_mat_carga` = `material_carga`.`id_mat_carga`))) order by `militar`.`nome_completo` */;
+/*!50001 SET character_set_client      = @saved_cs_client */;
+/*!50001 SET character_set_results     = @saved_cs_results */;
+/*!50001 SET collation_connection      = @saved_col_connection */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -288,4 +410,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-03-14 21:51:07
+-- Dump completed on 2024-03-15 18:08:23
